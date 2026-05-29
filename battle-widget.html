@@ -7,100 +7,130 @@
     body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; }
     
     #game-window { position: relative; width: 1200px; height: 700px; overflow: hidden; background-color: #000; box-shadow: 0 0 20px rgba(0,0,0,0.8); flex-shrink: 0; }
-    #bg-layer { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; filter: brightness(0.8); }
+    #bg-layer { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; filter: brightness(0.85); transition: transform 0.1s; }
     
-    /* Персонажи */
-    .char-container { position: absolute; bottom: 200px; width: 250px; height: 250px; display: flex; flex-direction: column; align-items: center; z-index: 50; }
-    .char-container img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 15px 10px rgba(0,0,0,0.5)); transition: transform 0.2s; }
-    
-    #hero-layer { left: 150px; }
-    #villain-layer { right: 150px; }
-    
-    /* Полоски здоровья */
-    .hp-wrapper { width: 100%; height: 20px; background: rgba(0,0,0,0.8); border: 3px solid #fff; border-radius: 10px; margin-bottom: 20px; position: relative; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
-    .hp-bar { height: 100%; width: 100%; transition: width 0.4s ease-in-out; }
-    #hero-hp { background: linear-gradient(90deg, #28a745, #00ff00); }
-    #villain-hp { background: linear-gradient(90deg, #dc3545, #ff3333); }
+    /* Тряска экрана при ударе */
+    .screen-shake { animation: shakeScreen 0.3s ease-in-out; }
+    @keyframes shakeScreen { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-10px, 10px); } 50% { transform: translate(10px, -10px); } 75% { transform: translate(-10px, -10px); } }
 
-    /* Панель заданий (А-ля RPG Диалог) */
-    #task-panel { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 800px; background: rgba(10, 15, 30, 0.95); border: 4px solid #00bfff; border-radius: 15px; padding: 25px; box-shadow: 0 0 30px rgba(0,191,255,0.3); z-index: 100; text-align: center; color: white; transition: opacity 0.3s; }
-    #q-text { margin: 0 0 20px 0; font-size: 26px; font-weight: bold; }
+    /* Вспышка экрана */
+    #flash-overlay { position: absolute; inset: 0; background: white; opacity: 0; z-index: 150; pointer-events: none; }
+    .screen-flash { animation: flashScreen 0.3s ease-out; }
+    @keyframes flashScreen { 0% { opacity: 0.7; } 100% { opacity: 0; } }
+
+    /* Персонажи на арене (Четко над панелью вопросов) */
+    .char-container { position: absolute; bottom: 270px; width: 280px; height: 350px; display: flex; flex-direction: column; align-items: center; z-index: 50; }
+    .char-sprite { width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: flex-end; }
+    .char-container img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 15px 10px rgba(0,0,0,0.5)); transform-origin: bottom center; }
+    
+    #hero-layer { left: 120px; }
+    #villain-layer { right: 120px; }
+
+    /* Эффект взрыва/удара (накладывается поверх картинки) */
+    .hit-fx { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,170,0,0.8) 30%, rgba(255,0,0,0.5) 60%, rgba(0,0,0,0) 80%); z-index: 60; pointer-events: none; opacity: 0; mix-blend-mode: screen; }
+    .play-hit { animation: hitExplosion 0.4s ease-out forwards; }
+    @keyframes hitExplosion { 
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; filter: brightness(2); } 
+      50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.8; filter: brightness(1); } 
+      100% { transform: translate(-50%, -50%) scale(2); opacity: 0; } 
+    }
+    
+    /* Сердечки */
+    .hearts-wrapper { display: flex; gap: 5px; margin-bottom: 15px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 5px 15px rgba(0,0,0,0.5); flex-wrap: wrap; justify-content: center; max-width: 100%; }
+    .heart { font-size: 26px; text-shadow: 0 0 5px #000; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
+    .heart.dead { filter: grayscale(100%) brightness(0.3); transform: scale(0.7); }
+
+    /* Панель заданий (В самом низу, широкая) */
+    #task-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 1000px; background: rgba(10, 15, 30, 0.95); border: 3px solid #00bfff; border-radius: 15px; padding: 25px; box-shadow: 0 0 30px rgba(0,191,255,0.3); z-index: 100; text-align: center; color: white; transition: opacity 0.3s; box-sizing: border-box; }
+    #q-text { margin: 0 0 20px 0; font-size: 26px; font-weight: bold; text-shadow: 0 2px 4px #000; }
     .answers-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
-    .answer-btn { background: #004466; border: 2px solid #00bfff; color: white; padding: 12px 25px; font-size: 18px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; min-width: 150px; }
+    .answer-btn { background: #004466; border: 2px solid #00bfff; color: white; padding: 12px 25px; font-size: 18px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; min-width: 180px; }
     .answer-btn:hover { background: #00bfff; color: #000; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,191,255,0.4); }
     .answer-btn:disabled { pointer-events: none; opacity: 0.8; }
 
-    /* Анимации Атаки Героя */
+    /* --- АНИМАЦИИ БОЯ (С замахом и рывком) --- */
     @keyframes heroDash {
-      0% { transform: translateX(0) scale(1); }
-      40% { transform: translateX(500px) scale(1.1); }
-      50% { transform: translateX(550px) scale(1.2); }
-      70% { transform: translateX(500px) scale(1); }
-      100% { transform: translateX(0) scale(1); }
+      0% { transform: translateX(0) rotate(0); }
+      20% { transform: translateX(-40px) rotate(-5deg); } /* Замах назад */
+      50% { transform: translateX(550px) rotate(15deg) scale(1.1); } /* Удар */
+      70% { transform: translateX(550px) rotate(15deg) scale(1.1); } /* Пауза на ударе (hitstop) */
+      100% { transform: translateX(0) rotate(0); } /* Возврат */
     }
-    .hero-attack { animation: heroDash 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 60; }
+    .hero-attack { animation: heroDash 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 80; }
     
-    /* Анимации Атаки Злодея */
     @keyframes villainDash {
-      0% { transform: translateX(0) scale(1); }
-      40% { transform: translateX(-500px) scale(1.1); }
-      50% { transform: translateX(-550px) scale(1.2); }
-      70% { transform: translateX(-500px) scale(1); }
-      100% { transform: translateX(0) scale(1); }
+      0% { transform: translateX(0) rotate(0); }
+      20% { transform: translateX(40px) rotate(5deg); }
+      50% { transform: translateX(-550px) rotate(-15deg) scale(1.1); }
+      70% { transform: translateX(-550px) rotate(-15deg) scale(1.1); }
+      100% { transform: translateX(0) rotate(0); }
     }
-    .villain-attack { animation: villainDash 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 60; }
+    .villain-attack { animation: villainDash 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 80; }
 
-    /* Эффект получения урона */
-    @keyframes takeDamage {
-      0%, 100% { transform: translateX(0); filter: brightness(1); }
-      25% { transform: translateX(-15px); filter: brightness(2) drop-shadow(0 0 20px red) sepia(1) hue-rotate(-50deg) saturate(5); }
-      50% { transform: translateX(15px); filter: brightness(1); }
-      75% { transform: translateX(-15px); filter: brightness(2) drop-shadow(0 0 20px red) sepia(1) hue-rotate(-50deg) saturate(5); }
+    /* Эффект отбрасывания при получении урона */
+    @keyframes knockbackRight {
+      0% { transform: translateX(0); filter: brightness(1); }
+      20% { transform: translateX(80px) rotate(10deg); filter: brightness(2) saturate(5) hue-rotate(-50deg); } /* Отлетает красный */
+      100% { transform: translateX(0); filter: brightness(1); }
     }
-    .damaged { animation: takeDamage 0.5s ease-in-out; }
+    .damaged-right { animation: knockbackRight 0.5s ease-out; }
+
+    @keyframes knockbackLeft {
+      0% { transform: translateX(0); filter: brightness(1); }
+      20% { transform: translateX(-80px) rotate(-10deg); filter: brightness(2) saturate(5) hue-rotate(-50deg); }
+      100% { transform: translateX(0); filter: brightness(1); }
+    }
+    .damaged-left { animation: knockbackLeft 0.5s ease-out; }
 
     /* Окна финала */
     .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: white; display: none; }
-    .modal h1 { font-size: 70px; margin: 0 0 20px 0; }
-    #victory-screen h1 { color: #00ff00; text-shadow: 0 0 30px #00ff00; }
-    #defeat-screen h1 { color: #ff3333; text-shadow: 0 0 30px #ff3333; }
-    .restart-btn { background: white; color: black; padding: 15px 40px; font-size: 24px; font-weight: bold; border-radius: 10px; cursor: pointer; border: none; transition: 0.3s; }
-    .restart-btn:hover { background: #ccc; transform: scale(1.1); }
-
+    .modal h1 { font-size: 80px; margin: 0 0 20px 0; }
+    #victory-screen h1 { color: #00ff00; text-shadow: 0 0 30px rgba(0,255,0,0.8); }
+    #defeat-screen h1 { color: #ff3333; text-shadow: 0 0 30px rgba(255,51,51,0.8); }
+    .restart-btn { background: white; color: black; padding: 15px 40px; font-size: 24px; font-weight: bold; border-radius: 10px; cursor: pointer; border: none; transition: 0.3s; margin-top: 20px;}
+    .restart-btn:hover { background: #00bfff; color: white; transform: scale(1.1); }
   </style>
 </head>
 <body>
 
   <div id="game-window">
     <div id="bg-layer"></div>
+    <div id="flash-overlay"></div>
     
     <div class="char-container" id="hero-layer">
-      <div class="hp-wrapper"><div class="hp-bar" id="hero-hp"></div></div>
-      <img id="hero-img" src="">
+      <div class="hearts-wrapper" id="hero-hearts"></div>
+      <div class="char-sprite" id="hero-sprite">
+        <div class="hit-fx" id="hero-fx"></div>
+        <img id="hero-img" src="">
+      </div>
     </div>
 
     <div class="char-container" id="villain-layer">
-      <div class="hp-wrapper"><div class="hp-bar" id="villain-hp"></div></div>
-      <img id="villain-img" src="">
+      <div class="hearts-wrapper" id="villain-hearts"></div>
+      <div class="char-sprite" id="villain-sprite">
+        <div class="hit-fx" id="villain-fx"></div>
+        <img id="villain-img" src="">
+      </div>
     </div>
 
     <div id="task-panel">
-      <h2 id="q-text">Вопрос загружается...</h2>
+      <h2 id="q-text">Загрузка битвы...</h2>
       <div class="answers-grid" id="q-answers"></div>
     </div>
 
     <div id="victory-screen" class="overlay">
       <div class="modal" style="text-align: center;">
         <h1>Победа! 🎉</h1>
-        <p style="font-size: 24px; margin-bottom: 30px;">Злодей повержен!</p>
+        <p style="font-size: 30px; margin-bottom: 10px;">Злодей повержен!</p>
+        <p style="font-size: 20px; color: #aaa;">Вы ответили на все вопросы.</p>
       </div>
     </div>
 
     <div id="defeat-screen" class="overlay">
       <div class="modal" style="text-align: center;">
         <h1>Поражение! 💀</h1>
-        <p style="font-size: 24px; margin-bottom: 30px;">Ваш герой пал в бою.</p>
-        <button class="restart-btn" onclick="location.reload()">Попробовать снова</button>
+        <p style="font-size: 30px; margin-bottom: 10px;">Злодей оказался сильнее.</p>
+        <button class="restart-btn" onclick="location.reload()">Встать и сражаться снова</button>
       </div>
     </div>
   </div>
@@ -134,38 +164,60 @@
       heroEl.src = data.hero;
       villainEl.src = data.villain;
 
-      const heroHpBar = document.getElementById('hero-hp');
-      const villainHpBar = document.getElementById('villain-hp');
+      const heroSprite = document.getElementById('hero-sprite');
+      const villainSprite = document.getElementById('villain-sprite');
+      
+      const heroFx = document.getElementById('hero-fx');
+      const villainFx = document.getElementById('villain-fx');
+      
+      const heroHeartsContainer = document.getElementById('hero-hearts');
+      const villainHeartsContainer = document.getElementById('villain-hearts');
+      
       const taskPanel = document.getElementById('task-panel');
       const answersContainer = document.getElementById('q-answers');
+      const bgLayer = document.getElementById('bg-layer');
+      const flashOverlay = document.getElementById('flash-overlay');
       
       let currentTaskIndex = 0;
       let totalTasks = data.tasks.length;
       
-      // Логика здоровья
-      let heroMaxHp = 100;
-      let heroHp = 100;
-      let damageToHero = 25; // 4 ошибки = смерть
+      // Настройки ХП (Сердечки)
+      let heroTotalHp = 4; // 4 права на ошибку
+      let heroCurrentHp = heroTotalHp;
 
-      let villainMaxHp = 100;
-      let villainHp = 100;
-      let damageToVillain = 100 / totalTasks; // Распределяем ХП на кол-во вопросов
+      let villainTotalHp = totalTasks; // Злодей умирает ровно за кол-во заданий
+      let villainCurrentHp = villainTotalHp;
 
       let isAnimating = false;
 
+      // Отрисовка сердечек
+      function renderHearts(container, count) {
+        container.innerHTML = '';
+        for(let i=0; i<count; i++) {
+          let h = document.createElement('span');
+          h.innerText = '❤️';
+          h.className = 'heart';
+          container.appendChild(h);
+        }
+      }
+      
+      function loseHeart(container, currentHp) {
+        let hearts = container.querySelectorAll('.heart');
+        // Обращаемся к сердечку по индексу (currentHp уже уменьшен, поэтому он указывает на правильное сердечко)
+        if(hearts[currentHp]) {
+          hearts[currentHp].classList.add('dead');
+        }
+      }
+
+      renderHearts(heroHeartsContainer, heroTotalHp);
+      renderHearts(villainHeartsContainer, villainTotalHp);
+      
       resizeGame();
       loadTask(currentTaskIndex);
 
-      function updateHpVisuals() {
-        heroHpBar.style.width = `${Math.max(0, heroHp)}%`;
-        villainHpBar.style.width = `${Math.max(0, villainHp)}%`;
-      }
-
       function loadTask(index) {
         if (index >= totalTasks) {
-          setTimeout(() => {
-            document.getElementById('victory-screen').style.display = 'flex';
-          }, 1000);
+          setTimeout(() => { document.getElementById('victory-screen').style.display = 'flex'; }, 1000);
           return;
         }
 
@@ -182,33 +234,52 @@
         });
       }
 
+      function applyScreenEffects() {
+        bgLayer.classList.add('screen-shake');
+        flashOverlay.classList.add('screen-flash');
+        setTimeout(() => {
+          bgLayer.classList.remove('screen-shake');
+          flashOverlay.classList.remove('screen-flash');
+        }, 300);
+      }
+
       function handleAnswer(isCorrect, btnClicked, correctText) {
         if (isAnimating) return;
         isAnimating = true;
 
-        // Блокируем кнопки
         document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
 
         if (isCorrect) {
           btnClicked.style.background = '#00ff00';
           btnClicked.style.color = '#000';
           
-          // 1. Атакует герой
-          heroEl.parentElement.classList.add('hero-attack');
+          // Анимация атаки ГЕРОЯ
+          heroSprite.classList.add('hero-attack');
           
           setTimeout(() => {
-            // Удар пришелся по злодею (момент 400мс)
-            villainEl.classList.add('damaged');
-            villainHp -= damageToVillain;
-            updateHpVisuals();
+            // Момент удара (на 400мс анимации героя)
+            applyScreenEffects();
             
-            setTimeout(() => villainEl.classList.remove('damaged'), 500);
+            // Взрыв на злодее
+            villainFx.classList.add('play-hit');
+            // Отбрасывание злодея
+            villainSprite.classList.add('damaged-right');
+            
+            // Минус сердце
+            villainCurrentHp--;
+            loseHeart(villainHeartsContainer, villainCurrentHp);
+            
+            setTimeout(() => {
+              villainFx.classList.remove('play-hit');
+              villainSprite.classList.remove('damaged-right');
+            }, 500);
           }, 400);
 
           setTimeout(() => {
-            heroEl.parentElement.classList.remove('hero-attack');
+            heroSprite.classList.remove('hero-attack');
             currentTaskIndex++;
-            taskPanel.style.opacity = '0'; // Скрываем панель
+            taskPanel.style.opacity = '0'; 
+            
             setTimeout(() => {
               loadTask(currentTaskIndex);
               taskPanel.style.opacity = '1';
@@ -218,38 +289,45 @@
 
         } else {
           btnClicked.style.background = '#ff3333';
-          
-          // Показываем где был правильный ответ
           document.querySelectorAll('.answer-btn').forEach(b => {
             if(b.innerText === correctText) { b.style.border = '2px solid #00ff00'; }
           });
 
-          // 1. Атакует злодей
-          villainEl.parentElement.classList.add('villain-attack');
+          // Анимация атаки ЗЛОДЕЯ
+          villainSprite.classList.add('villain-attack');
           
           setTimeout(() => {
-            // Удар по герою (момент 400мс)
-            heroEl.classList.add('damaged');
-            heroHp -= damageToHero;
-            updateHpVisuals();
+            // Момент удара
+            applyScreenEffects();
             
-            setTimeout(() => heroEl.classList.remove('damaged'), 500);
+            // Взрыв на герое
+            heroFx.classList.add('play-hit');
+            // Отбрасывание героя
+            heroSprite.classList.add('damaged-left');
+            
+            // Минус сердце
+            heroCurrentHp--;
+            loseHeart(heroHeartsContainer, heroCurrentHp);
+            
+            setTimeout(() => {
+              heroFx.classList.remove('play-hit');
+              heroSprite.classList.remove('damaged-left');
+            }, 500);
           }, 400);
 
           setTimeout(() => {
-            villainEl.parentElement.classList.remove('villain-attack');
+            villainSprite.classList.remove('villain-attack');
             
-            if (heroHp <= 0) {
+            if (heroCurrentHp <= 0) {
               setTimeout(() => {
                 document.getElementById('defeat-screen').style.display = 'flex';
               }, 500);
             } else {
-              // Разблокируем кнопки для повторной попытки
               document.querySelectorAll('.answer-btn').forEach(b => { b.disabled = false; });
-              btnClicked.disabled = true; // Кроме той, что уже нажали неверно
+              btnClicked.disabled = true; 
               isAnimating = false;
             }
-          }, 800); // Конец анимации атаки
+          }, 800);
         }
       }
     }
