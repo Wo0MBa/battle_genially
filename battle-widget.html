@@ -72,14 +72,14 @@
       transform: translateX(-50%); 
       width: 92%; 
       max-width: 1050px; 
-      background: #000000; /* Чисто черный фон */
-      border: none; /* Убрана синяя обводка */
+      background: #000000; 
+      border: none; 
       border-radius: 16px; 
       padding: 30px; 
-      box-shadow: 0 0 35px rgba(0,0,0,0.8); /* Заменена на черную тень */
+      box-shadow: 0 0 35px rgba(0,0,0,0.8); 
       z-index: 100; 
       text-align: center; 
-      color: #ffffff; /* Белый текст */
+      color: #ffffff; 
       box-sizing: border-box; 
       transition: opacity 0.3s;
     }
@@ -89,7 +89,7 @@
     /* Кнопки ответов: БЕЛАЯ ОБВОДКА */
     .answer-btn { 
       background: #111; 
-      border: 2px solid #ffffff; /* Белая обводка */
+      border: 2px solid #ffffff; 
       color: #ffffff; 
       padding: 14px 28px; 
       font-size: 19px; 
@@ -100,10 +100,10 @@
       min-width: 200px; 
     }
     .answer-btn:hover { 
-      background: #ffffff; /* Белый фон при наведении */
-      color: #000000; /* Черный текст при наведении */
+      background: #ffffff; 
+      color: #000000; 
       transform: translateY(-3px); 
-      box-shadow: 0 6px 18px rgba(255,255,255,0.45); /* Белое свечение */
+      box-shadow: 0 6px 18px rgba(255,255,255,0.45); 
     }
     .answer-btn:disabled { pointer-events: none; opacity: 0.8; }
 
@@ -338,13 +338,12 @@
           }, 850);
 
         } else {
+          // Игрок ответил неверно - красим только нажатую кнопку в красный
           btnClicked.style.background = '#ff3333';
           btnClicked.style.borderColor = '#ff3333';
           
-          document.querySelectorAll('.answer-btn').forEach(b => {
-            if(b.innerText === correctText) { b.style.border = '2px solid #00ff00'; }
-          });
-
+          // Подсветка правильного ответа удалена! 
+          
           villainSprite.classList.add('villain-attack');
           
           setTimeout(() => {
@@ -370,7 +369,7 @@
               }, 500);
             } else {
               document.querySelectorAll('.answer-btn').forEach(b => { b.disabled = false; });
-              btnClicked.disabled = true; 
+              btnClicked.disabled = true; // Блокируем только ту кнопку, на которую уже нажали с ошибкой
               isAnimating = false;
             }
           }, 850);
