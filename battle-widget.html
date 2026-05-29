@@ -64,7 +64,7 @@
     .heart { font-size: 22px; text-shadow: 0 2px 4px #000; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .heart.dead { filter: grayscale(100%) brightness(0.25); transform: scale(0.65); opacity: 0.5; }
 
-    /* Панель заданий: СТИЛЬ - ЧИСТО ЧЕРНЫЙ ФОН, БЕЛЫЙ ТЕКСТ */
+    /* Панель заданий: ЧИСТО ЧЕРНЫЙ ФОН, БЕЗ ОБВОДОК */
     #task-panel { 
       position: absolute; 
       bottom: 20px; 
@@ -72,23 +72,24 @@
       transform: translateX(-50%); 
       width: 92%; 
       max-width: 1050px; 
-      background: #000000; /* Чисто черный цвет */
-      border: 3px solid #00bfff; /* Голубая неоновая рамка */
+      background: #000000; /* Чисто черный фон */
+      border: none; /* Убрана синяя обводка */
       border-radius: 16px; 
       padding: 30px; 
-      box-shadow: 0 0 35px rgba(0,191,255,0.35); 
+      box-shadow: 0 0 35px rgba(0,0,0,0.8); /* Заменена на черную тень */
       z-index: 100; 
       text-align: center; 
-      color: #ffffff; /* Чисто белый текст */
+      color: #ffffff; /* Белый текст */
       box-sizing: border-box; 
       transition: opacity 0.3s;
     }
     #q-text { margin: 0 0 22px 0; font-size: 26px; font-weight: bold; text-shadow: 0 2px 5px #000; color: #ffffff; }
     .answers-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
     
+    /* Кнопки ответов: БЕЛАЯ ОБВОДКА */
     .answer-btn { 
       background: #111; 
-      border: 2px solid #00bfff; 
+      border: 2px solid #ffffff; /* Белая обводка */
       color: #ffffff; 
       padding: 14px 28px; 
       font-size: 19px; 
@@ -98,16 +99,21 @@
       font-weight: bold; 
       min-width: 200px; 
     }
-    .answer-btn:hover { background: #00bfff; color: #000000; transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,191,255,0.45); }
+    .answer-btn:hover { 
+      background: #ffffff; /* Белый фон при наведении */
+      color: #000000; /* Черный текст при наведении */
+      transform: translateY(-3px); 
+      box-shadow: 0 6px 18px rgba(255,255,255,0.45); /* Белое свечение */
+    }
     .answer-btn:disabled { pointer-events: none; opacity: 0.8; }
 
     /* --- RPG АНИМАЦИИ ДРАКИ --- */
     @keyframes heroDash {
       0% { transform: translateX(0) rotate(0); }
-      15% { transform: translateX(-50px) rotate(-6deg); } /* Динамичный замах назад */
-      45% { transform: translateX(570px) rotate(12deg) scale(1.15); } /* Молниеносный выпад вперед */
-      70% { transform: translateX(570px) rotate(12deg) scale(1.15); } /* Стоп-кадр удара */
-      100% { transform: translateX(0) rotate(0); } /* Возврат на позицию */
+      15% { transform: translateX(-50px) rotate(-6deg); } 
+      45% { transform: translateX(570px) rotate(12deg) scale(1.15); } 
+      70% { transform: translateX(570px) rotate(12deg) scale(1.15); } 
+      100% { transform: translateX(0) rotate(0); } 
     }
     .hero-attack { animation: heroDash 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 85; }
     
@@ -139,12 +145,11 @@
     .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: white; display: none; }
     .modal h1 { font-size: 75px; margin: 0 0 15px 0; text-align: center; }
     
-    /* Точный кастомный текст победы */
     #victory-screen h1 { color: #00ff00; text-shadow: 0 0 35px rgba(0,255,0,0.7); }
     #defeat-screen h1 { color: #ff3333; text-shadow: 0 0 35px rgba(255,51,51,0.7); }
     
     .restart-btn { background: #ffffff; color: #000000; padding: 16px 45px; font-size: 24px; font-weight: bold; border-radius: 12px; cursor: pointer; border: none; transition: 0.3s; margin-top: 25px; box-shadow: 0 5px 15px rgba(255,255,255,0.2); }
-    .restart-btn:hover { background: #00bfff; color: #ffffff; transform: scale(1.08); box-shadow: 0 5px 20px rgba(0,191,255,0.5); }
+    .restart-btn:hover { background: #cccccc; color: #000000; transform: scale(1.08); box-shadow: 0 5px 20px rgba(255,255,255,0.5); }
   </style>
 </head>
 <body>
@@ -190,7 +195,6 @@
   </div>
 
   <script>
-    // Автомасштабирование интерфейса поверх адаптивного full-screen фона
     function resizeGame() {
       const game = document.getElementById('game-window');
       const scale = Math.min(window.innerWidth / 1200, window.innerHeight / 700);
@@ -213,7 +217,6 @@
     }
 
     function initGame(data) {
-      // Привязываем фоновую картинку прямо к body для устранения черных полос по бокам
       document.body.style.backgroundImage = `url(${data.bg})`;
       
       const heroEl = document.getElementById('hero-img');
@@ -236,7 +239,6 @@
       let currentTaskIndex = 0;
       let totalTasks = data.tasks.length;
       
-      // ОПТИМИЗАЦИЯ: Одинаковое стартовое количество сердечек на базе вопросов!
       let heroTotalHp = totalTasks; 
       let heroCurrentHp = heroTotalHp;
 
@@ -262,7 +264,6 @@
         }
       }
 
-      // Генерируем равное число сердечек
       renderHearts(heroHeartsContainer, heroTotalHp);
       renderHearts(villainHeartsContainer, villainTotalHp);
       
@@ -308,11 +309,9 @@
           btnClicked.style.color = '#000000';
           btnClicked.style.borderColor = '#00ff00';
           
-          // Атакует ГЕРОЙ (динамичный замах + глубокий выпад)
           heroSprite.classList.add('hero-attack');
           
           setTimeout(() => {
-            // Момент столкновения (400мс)
             applyImpactEffects();
             villainFx.classList.add('play-hit');
             villainSprite.classList.add('damaged-right');
@@ -346,11 +345,9 @@
             if(b.innerText === correctText) { b.style.border = '2px solid #00ff00'; }
           });
 
-          // Атакует ЗЛОДЕЙ
           villainSprite.classList.add('villain-attack');
           
           setTimeout(() => {
-            // Момент столкновения
             applyImpactEffects();
             heroFx.classList.add('play-hit');
             heroSprite.classList.add('damaged-left');
