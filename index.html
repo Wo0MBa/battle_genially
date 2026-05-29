@@ -3,28 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Генератор: RPG Битва</title>
+  <title>Генератор: RPG Битва (Оптимизированный)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #0c1427; color: #e0e0e0; padding: 20px; }
-    .container { max-width: 900px; margin: 0 auto; background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-    h1 { color: #ff3366; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0c1427; color: #e0e0e0; padding: 20px; margin: 0; }
+    .container { max-width: 900px; margin: 0 auto; background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 1px solid #1a2a4a; }
+    h1 { color: #ff3366; text-align: center; text-transform: uppercase; letter-spacing: 2px; margin-top: 10px; }
     .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 30px; margin-bottom: 15px; }
     .section-header h3 { margin: 0; color: #00bfff; }
     
     input[type="url"], input[type="text"] { width: 100%; margin-bottom: 10px; padding: 12px; border-radius: 8px; border: 1px solid #00bfff; background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; font-size: 15px; }
-    button { background: #00bfff; color: white; padding: 12px; cursor: pointer; font-weight: bold; border: none; border-radius: 8px; transition: 0.3s; width: 100%; }
-    button:hover { background: #008cba; }
+    button { background: #00bfff; color: white; padding: 12px; cursor: pointer; font-weight: bold; border: none; border-radius: 8px; transition: 0.3s; width: 100%; font-size: 16px; }
+    button:hover { background: #008cba; transform: translateY(-1px); }
     
     #tasks-panel { display: flex; flex-direction: column; gap: 15px; }
     .task-card { background: rgba(0, 191, 255, 0.05); border: 1px solid #00bfff; padding: 15px; border-radius: 8px; position: relative; padding-top: 35px; }
-    .task-badge { position: absolute; top: -10px; left: -10px; background: #ff3366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+    .task-badge { position: absolute; top: -10px; left: -10px; background: #ff3366; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; border: 2px solid #000; }
     
-    .delete-task-btn { position: absolute; top: 10px; right: 10px; width: 35px; height: 35px; padding: 0; background: #dc3545; color: white; border-radius: 5px; font-size: 16px; cursor: pointer; border: none; }
+    .delete-task-btn { position: absolute; top: 10px; right: 10px; width: 35px; height: 35px; padding: 0; background: #dc3545; color: white; border-radius: 5px; font-size: 16px; cursor: pointer; border: none; transition: 0.2s; }
+    .delete-task-btn:hover { background: #c82333; }
+    
     .opt-wrapper { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
     .opt-wrapper input { flex: 1; margin-bottom: 0 !important; }
-    .delete-opt-btn { width: 44px; height: 44px; background: #dc3545; color: white; border-radius: 8px; font-size: 16px; cursor: pointer; border: none; flex-shrink: 0; }
-    .add-opt-btn { background: transparent; border: 1px dashed #00bfff; color: #00bfff; padding: 8px; margin-bottom: 15px; }
+    .delete-opt-btn { width: 44px; height: 44px; background: #dc3545; color: white; border-radius: 8px; font-size: 16px; cursor: pointer; border: none; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .delete-opt-btn:hover { background: #c82333; }
+    
+    .add-opt-btn { background: transparent; border: 1px dashed #00bfff; color: #00bfff; padding: 8px; margin-bottom: 15px; width: auto; font-size: 14px; }
+    .add-opt-btn:hover { background: rgba(0, 191, 255, 0.1); }
   </style>
 </head>
 <body>
@@ -32,7 +37,7 @@
     <h1>Генератор: RPG Битва ⚔️</h1>
     
     <div class="section-header"><h3>1. Участники и Арена</h3></div>
-    <p style="color: #aaa; margin-top: 0; font-size: 14px;">(Используйте картинки с прозрачным фоном для персонажей)</p>
+    <p style="color: #aaa; margin-top: 0; font-size: 14px;">Используйте ссылки на картинки с прозрачным фоном (.png) для персонажей.</p>
     <input type="url" id="bg-url" placeholder="URL Фона (Арена битвы)">
     <div style="display: flex; gap: 15px;">
       <input type="url" id="hero-url" placeholder="URL ГЕРОЯ (Слева)">
@@ -43,13 +48,13 @@
       <h3>2. Задания (Удары)</h3>
       <button id="add-task-btn" style="width: auto; padding: 6px 15px; background: #28a745; margin: 0; font-size: 14px;">+ Добавить вопрос</button>
     </div>
-    <p style="color: #aaa; margin-top: 0; font-size: 14px;">Каждый правильный ответ наносит урон злодею. Каждый неверный — отнимает здоровье у вас.</p>
+    <p style="color: #aaa; margin-top: 0; font-size: 14px;">Количество сердечек у обоих бойцов на арене будет автоматически равно числу созданных вопросов.</p>
     
     <div id="tasks-panel"></div>
 
     <div class="section-header"><h3>3. Экспорт в Genially</h3></div>
     <button id="generate-btn" style="background: #ff3366; padding: 15px; font-size: 18px;">Сгенерировать код 🔗</button>
-    <textarea id="iframe-code" rows="5" readonly style="margin-top: 15px; font-family: monospace;"></textarea>
+    <textarea id="iframe-code" rows="5" readonly style="margin-top: 15px; font-family: monospace; background: #111; color: #0f0; border: 1px solid #333; padding: 10px; border-radius: 8px; width: 100%; box-sizing: border-box;"></textarea>
   </div>
 
   <script>
@@ -67,20 +72,25 @@
       card.innerHTML = `
         <div class="task-badge">${id}</div>
         <button type="button" class="delete-task-btn" data-id="${id}">✖</button>
-        <input type="text" class="task-q" placeholder="Текст вопроса">
+        <input type="text" class="task-q" placeholder="Текст вопроса (например: Какая планета ближе всего к Солнцу?)">
         <div class="opts-container" id="opts-${id}">
           <div class="opt-wrapper">
-            <input type="text" class="task-opt" placeholder="Неправильный вариант">
+            <input type="text" class="task-opt" placeholder="Ложный вариант 1">
+            <button type="button" class="delete-opt-btn">✖</button>
+          </div>
+          <div class="opt-wrapper">
+            <input type="text" class="task-opt" placeholder="Ложный вариант 2">
             <button type="button" class="delete-opt-btn">✖</button>
           </div>
         </div>
         <button type="button" class="add-opt-btn" data-id="${id}">+ Добавить ложный вариант</button>
-        <input type="text" class="task-correct" placeholder="ПРАВИЛЬНЫЙ вариант (Нанесет урон злодею)" style="border-color: #00ff00; background: rgba(0, 255, 0, 0.1);">
+        <input type="text" class="task-correct" placeholder="ПРАВИЛЬНЫЙ вариант (нанесет удар злодею)" style="border-color: #00ff00; background: rgba(0, 255, 0, 0.05);">
       `;
       tasksPanel.appendChild(card);
       updateNumbers();
     }
 
+    // По умолчанию создаем 3 задания
     createTaskForm(); createTaskForm(); createTaskForm();
 
     document.getElementById('add-task-btn').addEventListener('click', createTaskForm);
@@ -88,7 +98,8 @@
     tasksPanel.addEventListener('click', (e) => {
       if (e.target.classList.contains('delete-task-btn')) {
         const id = parseInt(e.target.getAttribute('data-id'));
-        document.getElementById(`task-form-${id}`).remove();
+        const element = document.getElementById(`task-form-${id}`);
+        if(element) element.remove();
         updateNumbers();
       }
       if (e.target.classList.contains('delete-opt-btn')) {
@@ -132,18 +143,18 @@
       });
 
       if (gameData.tasks.length === 0) return alert('Добавьте хотя бы один вопрос!');
-      if (!formsValid) return alert('Заполните все поля! Вопрос, правильный ответ и минимум 1 ложный.');
+      if (!formsValid) return alert('Заполните все поля! Вопрос, правильный ответ и минимум 1 ложный вариант.');
 
       const compressedData = LZString.compressToEncodedURIComponent(JSON.stringify(gameData));
       const currentUrl = window.location.href.replace(/\/[^\/]*$/, '/');
       const widgetUrl = `${currentUrl}battle-widget.html?data=${compressedData}`;
       
-      const iframeStr = `<iframe src="${widgetUrl}" width="100%" height="700" frameborder="0" allowfullscreen></iframe>`;
+      const iframeStr = `<iframe src="${widgetUrl}" width="100%" height="700" frameborder="0" allowfullscreen style="border: none; max-width: 100%;"></iframe>`;
       document.getElementById('iframe-code').value = iframeStr;
       navigator.clipboard.writeText(iframeStr);
       
       const btn = document.getElementById('generate-btn');
-      btn.innerText = '✅ Код скопирован!';
+      btn.innerText = '✅ Код скопирован в буфер обмена!';
       setTimeout(() => btn.innerText = 'Сгенерировать код 🔗', 2000);
     });
   </script>
