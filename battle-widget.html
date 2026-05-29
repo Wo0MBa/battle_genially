@@ -2,101 +2,156 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <title>RPG Battle Arena</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; }
+    /* Полное избавление от черных полос: вешаем фон на body в режиме cover */
+    body, html { 
+      margin: 0; 
+      padding: 0; 
+      width: 100%; 
+      height: 100%; 
+      overflow: hidden; 
+      background-color: #000; 
+      background-position: center; 
+      background-size: cover; 
+      background-repeat: no-repeat; 
+      font-family: 'Segoe UI', Tahoma, sans-serif; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      position: relative; 
+      transition: background-image 0.2s ease-in-out;
+    }
     
-    #game-window { position: relative; width: 1200px; height: 700px; overflow: hidden; background-color: #000; box-shadow: 0 0 20px rgba(0,0,0,0.8); flex-shrink: 0; }
-    #bg-layer { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; filter: brightness(0.85); transition: transform 0.1s; }
-    
-    /* Тряска экрана при ударе */
-    .screen-shake { animation: shakeScreen 0.3s ease-in-out; }
-    @keyframes shakeScreen { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-10px, 10px); } 50% { transform: translate(10px, -10px); } 75% { transform: translate(-10px, -10px); } }
-
-    /* Вспышка экрана */
+    /* Эффект вспышки поверх всего экрана */
     #flash-overlay { position: absolute; inset: 0; background: white; opacity: 0; z-index: 150; pointer-events: none; }
-    .screen-flash { animation: flashScreen 0.3s ease-out; }
-    @keyframes flashScreen { 0% { opacity: 0.7; } 100% { opacity: 0; } }
+    .screen-flash { animation: flashScreen 0.35s ease-out; }
+    @keyframes flashScreen { 0% { opacity: 0.75; } 100% { opacity: 0; } }
 
-    /* Персонажи на арене (Четко над панелью вопросов) */
-    .char-container { position: absolute; bottom: 270px; width: 280px; height: 350px; display: flex; flex-direction: column; align-items: center; z-index: 50; }
-    .char-sprite { width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: flex-end; }
-    .char-container img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 15px 10px rgba(0,0,0,0.5)); transform-origin: bottom center; }
+    /* Эффект тряски всего экрана */
+    .screen-shake { animation: shakeScreen 0.35s ease-in-out; }
+    @keyframes shakeScreen { 
+      0%, 100% { transform: translate(0, 0); } 
+      20% { transform: translate(-8px, 6px); } 
+      40% { transform: translate(8px, -6px); } 
+      60% { transform: translate(-6px, -6px); } 
+      80% { transform: translate(6px, 6px); } 
+    }
+
+    /* Игровое окно строго разделено, контент прозрачный и накладывается сверху */
+    #game-window { position: relative; width: 1200px; height: 700px; overflow: hidden; flex-shrink: 0; z-index: 10; background: transparent; }
     
-    #hero-layer { left: 120px; }
-    #villain-layer { right: 120px; }
+    /* Контейнеры персонажей приподняты, чтобы не пересекаться с панелью вопросов */
+    .char-container { position: absolute; bottom: 270px; width: 300px; height: 350px; display: flex; flex-direction: column; align-items: center; z-index: 50; }
+    .char-sprite { width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: flex-end; }
+    .char-container img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 15px 10px rgba(0,0,0,0.6)); transform-origin: bottom center; }
+    
+    #hero-layer { left: 100px; }
+    #villain-layer { right: 100px; }
 
-    /* Эффект взрыва/удара (накладывается поверх картинки) */
-    .hit-fx { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 200px; height: 200px; background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,170,0,0.8) 30%, rgba(255,0,0,0.5) 60%, rgba(0,0,0,0) 80%); z-index: 60; pointer-events: none; opacity: 0; mix-blend-mode: screen; }
+    /* Эффект магической вспышки удара */
+    .hit-fx { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 220px; height: 220px; background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,140,0,0.85) 35%, rgba(255,0,0,0.5) 65%, rgba(0,0,0,0) 85%); z-index: 65; pointer-events: none; opacity: 0; mix-blend-mode: screen; }
     .play-hit { animation: hitExplosion 0.4s ease-out forwards; }
     @keyframes hitExplosion { 
-      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; filter: brightness(2); } 
-      50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.8; filter: brightness(1); } 
-      100% { transform: translate(-50%, -50%) scale(2); opacity: 0; } 
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; filter: brightness(2.5); } 
+      50% { transform: translate(-50%, -50%) scale(1.4); opacity: 0.9; } 
+      100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; } 
     }
     
-    /* Сердечки */
-    .hearts-wrapper { display: flex; gap: 5px; margin-bottom: 15px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 5px 15px rgba(0,0,0,0.5); flex-wrap: wrap; justify-content: center; max-width: 100%; }
-    .heart { font-size: 26px; text-shadow: 0 0 5px #000; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); }
-    .heart.dead { filter: grayscale(100%) brightness(0.3); transform: scale(0.7); }
+    /* Панели сердечек */
+    .hearts-wrapper { display: flex; gap: 4px; margin-bottom: 15px; background: rgba(0,0,0,0.75); padding: 6px 14px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.25); box-shadow: 0 6px 12px rgba(0,0,0,0.6); flex-wrap: wrap; justify-content: center; max-width: 90%; }
+    .heart { font-size: 22px; text-shadow: 0 2px 4px #000; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .heart.dead { filter: grayscale(100%) brightness(0.25); transform: scale(0.65); opacity: 0.5; }
 
-    /* Панель заданий (В самом низу, широкая) */
-    #task-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 1000px; background: rgba(10, 15, 30, 0.95); border: 3px solid #00bfff; border-radius: 15px; padding: 25px; box-shadow: 0 0 30px rgba(0,191,255,0.3); z-index: 100; text-align: center; color: white; transition: opacity 0.3s; box-sizing: border-box; }
-    #q-text { margin: 0 0 20px 0; font-size: 26px; font-weight: bold; text-shadow: 0 2px 4px #000; }
-    .answers-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
-    .answer-btn { background: #004466; border: 2px solid #00bfff; color: white; padding: 12px 25px; font-size: 18px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; min-width: 180px; }
-    .answer-btn:hover { background: #00bfff; color: #000; transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,191,255,0.4); }
+    /* Панель заданий: СТИЛЬ - ЧИСТО ЧЕРНЫЙ ФОН, БЕЛЫЙ ТЕКСТ */
+    #task-panel { 
+      position: absolute; 
+      bottom: 20px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      width: 92%; 
+      max-width: 1050px; 
+      background: #000000; /* Чисто черный цвет */
+      border: 3px solid #00bfff; /* Голубая неоновая рамка */
+      border-radius: 16px; 
+      padding: 30px; 
+      box-shadow: 0 0 35px rgba(0,191,255,0.35); 
+      z-index: 100; 
+      text-align: center; 
+      color: #ffffff; /* Чисто белый текст */
+      box-sizing: border-box; 
+      transition: opacity 0.3s;
+    }
+    #q-text { margin: 0 0 22px 0; font-size: 26px; font-weight: bold; text-shadow: 0 2px 5px #000; color: #ffffff; }
+    .answers-grid { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+    
+    .answer-btn { 
+      background: #111; 
+      border: 2px solid #00bfff; 
+      color: #ffffff; 
+      padding: 14px 28px; 
+      font-size: 19px; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      transition: all 0.2s ease; 
+      font-weight: bold; 
+      min-width: 200px; 
+    }
+    .answer-btn:hover { background: #00bfff; color: #000000; transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,191,255,0.45); }
     .answer-btn:disabled { pointer-events: none; opacity: 0.8; }
 
-    /* --- АНИМАЦИИ БОЯ (С замахом и рывком) --- */
+    /* --- RPG АНИМАЦИИ ДРАКИ --- */
     @keyframes heroDash {
       0% { transform: translateX(0) rotate(0); }
-      20% { transform: translateX(-40px) rotate(-5deg); } /* Замах назад */
-      50% { transform: translateX(550px) rotate(15deg) scale(1.1); } /* Удар */
-      70% { transform: translateX(550px) rotate(15deg) scale(1.1); } /* Пауза на ударе (hitstop) */
-      100% { transform: translateX(0) rotate(0); } /* Возврат */
+      15% { transform: translateX(-50px) rotate(-6deg); } /* Динамичный замах назад */
+      45% { transform: translateX(570px) rotate(12deg) scale(1.15); } /* Молниеносный выпад вперед */
+      70% { transform: translateX(570px) rotate(12deg) scale(1.15); } /* Стоп-кадр удара */
+      100% { transform: translateX(0) rotate(0); } /* Возврат на позицию */
     }
-    .hero-attack { animation: heroDash 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 80; }
+    .hero-attack { animation: heroDash 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 85; }
     
     @keyframes villainDash {
       0% { transform: translateX(0) rotate(0); }
-      20% { transform: translateX(40px) rotate(5deg); }
-      50% { transform: translateX(-550px) rotate(-15deg) scale(1.1); }
-      70% { transform: translateX(-550px) rotate(-15deg) scale(1.1); }
+      15% { transform: translateX(50px) rotate(6deg); }
+      45% { transform: translateX(-570px) rotate(-12deg) scale(1.15); }
+      70% { transform: translateX(-570px) rotate(-12deg) scale(1.15); }
       100% { transform: translateX(0) rotate(0); }
     }
-    .villain-attack { animation: villainDash 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 80; }
+    .villain-attack { animation: villainDash 0.85s cubic-bezier(0.25, 1, 0.5, 1) forwards; z-index: 85; }
 
-    /* Эффект отбрасывания при получении урона */
+    /* Анимации отбрасывания при получении урона */
     @keyframes knockbackRight {
       0% { transform: translateX(0); filter: brightness(1); }
-      20% { transform: translateX(80px) rotate(10deg); filter: brightness(2) saturate(5) hue-rotate(-50deg); } /* Отлетает красный */
+      20% { transform: translateX(90px) rotate(12deg); filter: brightness(2.5) saturate(4) cubic-bezier(0, 0, 0.2, 1) drop-shadow(0 0 25px red); } 
       100% { transform: translateX(0); filter: brightness(1); }
     }
-    .damaged-right { animation: knockbackRight 0.5s ease-out; }
+    .damaged-right { animation: knockbackRight 0.55s ease-out; }
 
     @keyframes knockbackLeft {
       0% { transform: translateX(0); filter: brightness(1); }
-      20% { transform: translateX(-80px) rotate(-10deg); filter: brightness(2) saturate(5) hue-rotate(-50deg); }
+      20% { transform: translateX(-90px) rotate(-12deg); filter: brightness(2.5) saturate(4) cubic-bezier(0, 0, 0.2, 1) drop-shadow(0 0 25px red); }
       100% { transform: translateX(0); filter: brightness(1); }
     }
-    .damaged-left { animation: knockbackLeft 0.5s ease-out; }
+    .damaged-left { animation: knockbackLeft 0.55s ease-out; }
 
-    /* Окна финала */
-    .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: white; display: none; }
-    .modal h1 { font-size: 80px; margin: 0 0 20px 0; }
-    #victory-screen h1 { color: #00ff00; text-shadow: 0 0 30px rgba(0,255,0,0.8); }
-    #defeat-screen h1 { color: #ff3333; text-shadow: 0 0 30px rgba(255,51,51,0.8); }
-    .restart-btn { background: white; color: black; padding: 15px 40px; font-size: 24px; font-weight: bold; border-radius: 10px; cursor: pointer; border: none; transition: 0.3s; margin-top: 20px;}
-    .restart-btn:hover { background: #00bfff; color: white; transform: scale(1.1); }
+    /* Окна Победы и Поражения */
+    .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: white; display: none; }
+    .modal h1 { font-size: 75px; margin: 0 0 15px 0; text-align: center; }
+    
+    /* Точный кастомный текст победы */
+    #victory-screen h1 { color: #00ff00; text-shadow: 0 0 35px rgba(0,255,0,0.7); }
+    #defeat-screen h1 { color: #ff3333; text-shadow: 0 0 35px rgba(255,51,51,0.7); }
+    
+    .restart-btn { background: #ffffff; color: #000000; padding: 16px 45px; font-size: 24px; font-weight: bold; border-radius: 12px; cursor: pointer; border: none; transition: 0.3s; margin-top: 25px; box-shadow: 0 5px 15px rgba(255,255,255,0.2); }
+    .restart-btn:hover { background: #00bfff; color: #ffffff; transform: scale(1.08); box-shadow: 0 5px 20px rgba(0,191,255,0.5); }
   </style>
 </head>
 <body>
 
+  <div id="flash-overlay"></div>
+  
   <div id="game-window">
-    <div id="bg-layer"></div>
-    <div id="flash-overlay"></div>
-    
     <div class="char-container" id="hero-layer">
       <div class="hearts-wrapper" id="hero-hearts"></div>
       <div class="char-sprite" id="hero-sprite">
@@ -114,28 +169,28 @@
     </div>
 
     <div id="task-panel">
-      <h2 id="q-text">Загрузка битвы...</h2>
+      <h2 id="q-text">Инициализация боевой арены...</h2>
       <div class="answers-grid" id="q-answers"></div>
     </div>
 
     <div id="victory-screen" class="overlay">
-      <div class="modal" style="text-align: center;">
-        <h1>Победа! 🎉</h1>
-        <p style="font-size: 30px; margin-bottom: 10px;">Злодей повержен!</p>
-        <p style="font-size: 20px; color: #aaa;">Вы ответили на все вопросы.</p>
+      <div class="modal">
+        <h1>Победа! Поздравляю! 🎉</h1>
+        <p style="font-size: 32px; color: #e0e0e0; text-align: center; margin: 0;">Враг полностью разгромлен!</p>
       </div>
     </div>
 
     <div id="defeat-screen" class="overlay">
-      <div class="modal" style="text-align: center;">
+      <div class="modal">
         <h1>Поражение! 💀</h1>
-        <p style="font-size: 30px; margin-bottom: 10px;">Злодей оказался сильнее.</p>
-        <button class="restart-btn" onclick="location.reload()">Встать и сражаться снова</button>
+        <p style="font-size: 32px; color: #e0e0e0; text-align: center; margin: 0;">Ваш герой исчерпал все силы.</p>
+        <center><button class="restart-btn" onclick="location.reload()">Сразиться снова</button></center>
       </div>
     </div>
   </div>
 
   <script>
+    // Автомасштабирование интерфейса поверх адаптивного full-screen фона
     function resizeGame() {
       const game = document.getElementById('game-window');
       const scale = Math.min(window.innerWidth / 1200, window.innerHeight / 700);
@@ -149,16 +204,18 @@
     try {
       const raw = urlParams.get('data');
       if(raw) gameData = JSON.parse(LZString.decompressFromEncodedURIComponent(raw));
-    } catch(e) { console.error("Ошибка загрузки"); }
+    } catch(e) { console.error("Ошибка декомпрессии"); }
 
     if (!gameData || !gameData.tasks) {
-      document.body.innerHTML = "<h2 style='color:white;text-align:center;'>Нет данных для битвы</h2>";
+      document.body.innerHTML = "<h2 style='color:white;text-align:center;'>Ошибка: нет данных для запуска арены</h2>";
     } else {
       initGame(gameData);
     }
 
     function initGame(data) {
-      document.getElementById('bg-layer').style.backgroundImage = `url(${data.bg})`;
+      // Привязываем фоновую картинку прямо к body для устранения черных полос по бокам
+      document.body.style.backgroundImage = `url(${data.bg})`;
+      
       const heroEl = document.getElementById('hero-img');
       const villainEl = document.getElementById('villain-img');
       heroEl.src = data.hero;
@@ -166,7 +223,6 @@
 
       const heroSprite = document.getElementById('hero-sprite');
       const villainSprite = document.getElementById('villain-sprite');
-      
       const heroFx = document.getElementById('hero-fx');
       const villainFx = document.getElementById('villain-fx');
       
@@ -175,22 +231,20 @@
       
       const taskPanel = document.getElementById('task-panel');
       const answersContainer = document.getElementById('q-answers');
-      const bgLayer = document.getElementById('bg-layer');
       const flashOverlay = document.getElementById('flash-overlay');
       
       let currentTaskIndex = 0;
       let totalTasks = data.tasks.length;
       
-      // Настройки ХП (Сердечки)
-      let heroTotalHp = 4; // 4 права на ошибку
+      // ОПТИМИЗАЦИЯ: Одинаковое стартовое количество сердечек на базе вопросов!
+      let heroTotalHp = totalTasks; 
       let heroCurrentHp = heroTotalHp;
 
-      let villainTotalHp = totalTasks; // Злодей умирает ровно за кол-во заданий
+      let villainTotalHp = totalTasks; 
       let villainCurrentHp = villainTotalHp;
 
       let isAnimating = false;
 
-      // Отрисовка сердечек
       function renderHearts(container, count) {
         container.innerHTML = '';
         for(let i=0; i<count; i++) {
@@ -203,12 +257,12 @@
       
       function loseHeart(container, currentHp) {
         let hearts = container.querySelectorAll('.heart');
-        // Обращаемся к сердечку по индексу (currentHp уже уменьшен, поэтому он указывает на правильное сердечко)
         if(hearts[currentHp]) {
           hearts[currentHp].classList.add('dead');
         }
       }
 
+      // Генерируем равное число сердечек
       renderHearts(heroHeartsContainer, heroTotalHp);
       renderHearts(villainHeartsContainer, villainTotalHp);
       
@@ -217,7 +271,7 @@
 
       function loadTask(index) {
         if (index >= totalTasks) {
-          setTimeout(() => { document.getElementById('victory-screen').style.display = 'flex'; }, 1000);
+          setTimeout(() => { document.getElementById('victory-screen').style.display = 'flex'; }, 800);
           return;
         }
 
@@ -234,13 +288,13 @@
         });
       }
 
-      function applyScreenEffects() {
-        bgLayer.classList.add('screen-shake');
+      function applyImpactEffects() {
+        document.body.classList.add('screen-shake');
         flashOverlay.classList.add('screen-flash');
         setTimeout(() => {
-          bgLayer.classList.remove('screen-shake');
+          document.body.classList.remove('screen-shake');
           flashOverlay.classList.remove('screen-flash');
-        }, 300);
+        }, 350);
       }
 
       function handleAnswer(isCorrect, btnClicked, correctText) {
@@ -251,21 +305,18 @@
 
         if (isCorrect) {
           btnClicked.style.background = '#00ff00';
-          btnClicked.style.color = '#000';
+          btnClicked.style.color = '#000000';
+          btnClicked.style.borderColor = '#00ff00';
           
-          // Анимация атаки ГЕРОЯ
+          // Атакует ГЕРОЙ (динамичный замах + глубокий выпад)
           heroSprite.classList.add('hero-attack');
           
           setTimeout(() => {
-            // Момент удара (на 400мс анимации героя)
-            applyScreenEffects();
-            
-            // Взрыв на злодее
+            // Момент столкновения (400мс)
+            applyImpactEffects();
             villainFx.classList.add('play-hit');
-            // Отбрасывание злодея
             villainSprite.classList.add('damaged-right');
             
-            // Минус сердце
             villainCurrentHp--;
             loseHeart(villainHeartsContainer, villainCurrentHp);
             
@@ -285,27 +336,25 @@
               taskPanel.style.opacity = '1';
               isAnimating = false;
             }, 300);
-          }, 800); // Конец анимации атаки
+          }, 850);
 
         } else {
           btnClicked.style.background = '#ff3333';
+          btnClicked.style.borderColor = '#ff3333';
+          
           document.querySelectorAll('.answer-btn').forEach(b => {
             if(b.innerText === correctText) { b.style.border = '2px solid #00ff00'; }
           });
 
-          // Анимация атаки ЗЛОДЕЯ
+          // Атакует ЗЛОДЕЙ
           villainSprite.classList.add('villain-attack');
           
           setTimeout(() => {
-            // Момент удара
-            applyScreenEffects();
-            
-            // Взрыв на герое
+            // Момент столкновения
+            applyImpactEffects();
             heroFx.classList.add('play-hit');
-            // Отбрасывание героя
             heroSprite.classList.add('damaged-left');
             
-            // Минус сердце
             heroCurrentHp--;
             loseHeart(heroHeartsContainer, heroCurrentHp);
             
@@ -327,7 +376,7 @@
               btnClicked.disabled = true; 
               isAnimating = false;
             }
-          }, 800);
+          }, 850);
         }
       }
     }
